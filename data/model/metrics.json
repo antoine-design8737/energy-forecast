@@ -1,0 +1,10 @@
+{
+  "seasonal_naive_mape": 6.908860269044315,
+  "seasonal_naive_mae": 3995.9570746567947,
+  "yesterday_naive_mape": 5.020338620887427,
+  "yesterday_naive_mae": 2664.157066173068,
+  "model_mape": 1.7789642817394091,
+  "model_mae": 981.6530038954483,
+  "model_rmse": 1337.8892075500385,
+  "improvement_mape_pct": 74.25097320740156
+}

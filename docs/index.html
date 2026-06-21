@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Electricity Demand Forecast — France · LightGBM</title>
+  <meta name="description" content="A LightGBM model forecasts French next-day hourly electricity demand to within 1.78% error — roughly 3.9x more accurate than the seasonal-naive baseline." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ░░ NAV ░░ -->
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#top">⚡ <span>Electricity&nbsp;Forecast</span></a>
+      <nav class="nav-links">
+        <a href="#performance">Performance</a>
+        <a href="#benchmark">Benchmark</a>
+        <a href="#forecast">Forecast</a>
+        <a href="#diagnostics">Diagnostics</a>
+        <a href="#method">Method</a>
+      </nav>
+      <span class="nav-badge">MAPE <strong id="nav-mape">—</strong></span>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ░░ HERO ░░ -->
+    <section class="hero reveal">
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <span class="eyebrow">⚡ LightGBM · Walk-forward validated</span>
+        <h1>Forecasting France's electricity demand<br />to within <span class="hl" id="hero-mape">—</span> error.</h1>
+        <p class="lede">A gradient-boosting model predicts next-day hourly grid load from calendar,
+          load-history and weather signals — and beats the standard industry baseline by a wide margin.</p>
+        <div class="chips">
+          <div class="chip"><div class="v" id="chip-mape">—</div><div class="l">Mean abs. % error</div></div>
+          <div class="chip"><div class="v" id="chip-imp">—</div><div class="l">Error vs. baseline</div></div>
+          <div class="chip"><div class="v" id="chip-mae">—</div><div class="l">Mean abs. error</div></div>
+          <div class="chip"><div class="v" id="chip-rows">—</div><div class="l" id="chip-span">Hours of data</div></div>
+        </div>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#forecast">Try the live forecast ↓</a>
+          <a class="btn btn-ghost" href="#method">How it works</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ░░ PERFORMANCE ░░ -->
+    <section id="performance" class="section reveal">
+      <div class="sec-head">
+        <span class="kicker">Performance</span>
+        <h2>The headline numbers</h2>
+        <p>Scored on the most recent 90 days — data the model never saw during training.</p>
+      </div>
+      <div class="cards">
+        <div class="card"><span class="card-bar" style="background:var(--green)"></span>
+          <div class="card-label">MAPE · test set</div>
+          <div class="card-value" id="kpi-mape">—</div>
+          <div class="card-note">Mean absolute percentage error on 90 unseen days</div></div>
+        <div class="card"><span class="card-bar" style="background:var(--blue)"></span>
+          <div class="card-label">MAE</div>
+          <div class="card-value" id="kpi-mae">—</div>
+          <div class="card-note" id="kpi-mae-note">—</div></div>
+        <div class="card"><span class="card-bar" style="background:var(--indigo)"></span>
+          <div class="card-label">RMSE</div>
+          <div class="card-value" id="kpi-rmse">—</div>
+          <div class="card-note">Penalises the large misses more heavily</div></div>
+        <div class="card"><span class="card-bar" style="background:var(--amber)"></span>
+          <div class="card-label">vs. seasonal baseline</div>
+          <div class="card-value" id="kpi-imp">—</div>
+          <div class="card-note" id="kpi-imp-note">—</div></div>
+      </div>
+    </section>
+
+    <!-- ░░ BENCHMARK ░░ -->
+    <section id="benchmark" class="section reveal">
+      <div class="sec-head">
+        <span class="kicker">Benchmark</span>
+        <h2>How much better than the baselines?</h2>
+        <p>Utilities often quote a “same hour last week” seasonal-naive forecast.
+          This model cuts that error by roughly three-quarters.</p>
+      </div>
+      <div class="panel"><div id="chart-benchmark" class="chart chart-sm"></div></div>
+    </section>
+
+    <!-- ░░ INTERACTIVE FORECAST ░░ -->
+    <section id="forecast" class="section reveal">
+      <div class="sec-head">
+        <span class="kicker">Live forecast</span>
+        <h2>Try it on any day</h2>
+        <p>Pick a date to see the 24-hour forecast against what actually happened on the French grid.</p>
+      </div>
+
+      <div class="controls">
+        <button class="step" id="prev-day" aria-label="Previous day">◀</button>
+        <input type="date" id="day-picker" />
+        <button class="step" id="next-day" aria-label="Next day">▶</button>
+        <div class="daystats">
+          <div class="stat"><span class="stat-l">MAPE</span><span class="stat-v" id="d-mape">—</span></div>
+          <div class="stat"><span class="stat-l">MAE</span><span class="stat-v" id="d-mae">—</span></div>
+          <div class="stat"><span class="stat-l">RMSE</span><span class="stat-v" id="d-rmse">—</span></div>
+          <div class="stat"><span class="stat-l">vs. naive</span><span class="stat-v" id="d-vs">—</span></div>
+        </div>
+      </div>
+
+      <div class="panel"><div id="chart-24h" class="chart"></div></div>
+      <div class="panel" style="margin-top:16px"><div id="chart-week" class="chart chart-sm"></div></div>
+    </section>
+
+    <!-- ░░ DIAGNOSTICS ░░ -->
+    <section id="diagnostics" class="section reveal">
+      <div class="sec-head">
+        <span class="kicker">Diagnostics</span>
+        <h2>Why you can trust the number</h2>
+        <p>Errors are small, unbiased and stable across the day — not a lucky average.</p>
+      </div>
+      <div class="tabs">
+        <button class="tab is-active" data-tab="resid">Residual distribution</button>
+        <button class="tab" data-tab="hour">Error by hour</button>
+        <button class="tab" data-tab="feat">What drives it</button>
+      </div>
+      <div class="panel">
+        <p class="tab-cap" id="cap-resid">Forecast errors over the full 90-day hold-out. Centred on zero ⇒ no systematic bias.</p>
+        <div class="tab-panel" data-panel="resid"><div id="chart-resid" class="chart chart-sm"></div></div>
+        <div class="tab-panel is-hidden" data-panel="hour"><div id="chart-hour" class="chart chart-sm"></div></div>
+        <div class="tab-panel is-hidden" data-panel="feat"><div id="chart-feat" class="chart"></div></div>
+      </div>
+    </section>
+
+    <!-- ░░ METHOD ░░ -->
+    <section id="method" class="section reveal">
+      <div class="sec-head">
+        <span class="kicker">Under the hood</span>
+        <h2>How the forecast is built</h2>
+        <p>Three years of real grid data, physically-motivated features, and a leakage-free test.</p>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="ic">🛰️</div><h3>Real grid data</h3>
+          <p>Hourly load and generation-by-source from the ENTSO-E Transparency Platform, merged with
+            population-weighted weather from Open-Meteo onto one clean UTC grid.</p>
+          <div class="tile-meta" id="tile-span">— · France</div></div>
+        <div class="tile"><div class="ic">🧮</div><h3>Engineered features</h3>
+          <p>Cyclically-encoded calendar terms, public holidays, load lags &amp; rolling stats, plus
+            temperature (with a squared term for the U-shaped demand curve), wind and solar radiation.</p>
+          <div class="tile-meta" id="tile-feats">— predictive features</div></div>
+        <div class="tile"><div class="ic">🎯</div><h3>Honest evaluation</h3>
+          <p>Walk-forward validation: the model is retrained on all prior data before each weekly test
+            block, then scored on it. This mirrors real deployment and rules out look-ahead bias.</p>
+          <div class="tile-meta">No leakage · 90-day hold-out</div></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div>
+          <strong>⚡ Electricity Demand Forecast</strong><br />
+          Next-day hourly load · France · LightGBM with walk-forward validation.
+        </div>
+        <div class="footer-meta">
+          Built with LightGBM · ECharts · plain HTML/CSS/JS<br />
+          Data: <a href="https://transparency.entsoe.eu/">ENTSO-E</a> +
+          <a href="https://open-meteo.com/">Open-Meteo</a> · <span id="foot-gen">—</span>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+
+  <div id="load-error" class="load-error is-hidden">
+    Couldn't load <code>data.json</code>. Serve this folder over HTTP
+    (<code>python -m http.server</code>) rather than opening the file directly.
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

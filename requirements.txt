@@ -1,0 +1,10 @@
+entsoe-py==0.6.14
+lightgbm==4.6.0
+numpy==2.2.6
+pandas==2.2.3
+plotly==5.24.1
+pyarrow==20.0.0
+python-dotenv==1.1.0
+requests==2.32.3
+streamlit==1.58.0
+holidays==0.72

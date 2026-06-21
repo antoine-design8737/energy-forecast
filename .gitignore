@@ -1,0 +1,29 @@
+# --- Secrets (NEVER commit) ---
+.env
+.env.*
+*.key
+secrets.toml
+.streamlit/secrets.toml
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# --- Local dev / tooling artifacts ---
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- The separate Hugging Face Space repo lives here; don't nest it ---
+electricity-forecast/
+
+# Note: data/plots/*.png are kept on purpose — the README links to them as
+# visual proof of model performance. data/model/* and data/processed/
+# features.parquet must also stay committed: the deployed app reads them.
